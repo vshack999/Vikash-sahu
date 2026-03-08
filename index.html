@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vikash Bhai | Ultimate RGB Dashboard</title>
+    <style>
+        :root { 
+            --main-color: #00ff00; 
+            --bg-color: #0a0a0a; 
+            --glow-strength: 40px;
+            --ani-speed: 7s;
+        }
+        
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--main-color); 
+            font-family: 'Courier New', monospace; 
+            margin: 0; 
+            overflow-x: hidden;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            transition: filter 0.3s ease;
+        }
+
+        #matrix { position: fixed; top: 0; left: 0; z-index: -1; width: 100%; height: 100%; opacity: 0.3; }
+
+        @keyframes rgbGlow {
+            0% { border-color: #ff0000; box-shadow: 0 0 var(--glow-strength) #ff0000; }
+            33% { border-color: #00ff00; box-shadow: 0 0 var(--glow-strength) #00ff00; }
+            66% { border-color: #0000ff; box-shadow: 0 0 var(--glow-strength) #0000ff; }
+            100% { border-color: #ff0000; box-shadow: 0 0 var(--glow-strength) #ff0000; }
+        }
+
+        @keyframes cardPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+            100% { transform: scale(1); }
+        }
+        .pop-active { animation: cardPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) !important; }
+
+        #welcome-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 9999; display: flex; justify-content: center; align-items: center; transition: 1s;
+        }
+
+        .welcome-card {
+            padding: 40px; background: rgba(10, 10, 10, 0.95);
+            border: 3px solid var(--main-color); border-radius: 25px;
+            animation: rgbGlow 3s linear infinite; text-align: center;
+            cursor: pointer;
+        }
+
+        .dashboard-content { display: none; opacity: 0; transition: 1s; padding-top: 140px; }
+        .show-now { display: block !important; opacity: 1 !important; }
+
+        .theme-bar { 
+            position: fixed; top: 0; left: 0; width: 100%; z-index: 5000; 
+            background: rgba(0,0,0,0.95); border-bottom: 2px solid var(--main-color); 
+            padding: 10px; display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; align-items: center;
+            transition: transform 0.5s ease;
+        }
+
+        .hide-bar { transform: translateY(-100%); }
+
+        .banner-container {
+            position: relative; width: 90%; max-width: 1130px; margin: 0 auto 20px auto;
+            border-radius: 25px; overflow: hidden; border: 3px solid var(--main-color);
+            background: rgba(0, 0, 0, 0.95); text-align: center;
+            box-shadow: 0 0 15px var(--main-color);
+            animation: rgbGlow var(--ani-speed) linear infinite;
+            cursor: pointer;
+        }
+
+        .slider-wrapper {
+            display: flex;
+            transition: transform 0.7s cubic-bezier(0.645, 0.045, 0.355, 1);
+            width: 100%;
+        }
+
+        .slider-wrapper img {
+            min-width: 100%;
+            display: block;
+            pointer-events: none;
+            object-fit: cover;
+        }
+
+        .arrow {
+            position: absolute; top: 50%; transform: translateY(-50%);
+            background: rgba(0,0,0,0.4); color: var(--main-color);
+            border: 1px solid var(--main-color); border-radius: 50%;
+            width: 32px; height: 32px; font-size: 16px; cursor: pointer;
+            z-index: 100; display: flex; justify-content: center; align-items: center;
+            transition: 0.3s;
+        }
+        .arrow:hover { background: rgba(0,0,0,0.7); }
+        .arrow-left { left: 12px; }
+        .arrow-right { right: 12px; }
+
+        .container {
+            position: relative; width: 90%; max-width: 450px; margin: 0 auto 20px auto;
+            border-radius: 25px; overflow: hidden; border: 3px solid var(--main-color);
+            background: rgba(0, 0, 0, 0.95); text-align: center;
+            box-shadow: 0 0 15px var(--main-color);
+            animation: rgbGlow var(--ani-speed) linear infinite;
+            cursor: pointer;
+        }
+
+        .white-page-scroller {
+            width: 100%; max-width: 450px; margin: 40px auto;
+            background: #ffffff; border-radius: 25px; padding: 25px;
+            color: #000; box-shadow: 0 0 30px rgba(255, 255, 255, 0.6);
+            text-align: center; font-family: sans-serif;
+            box-sizing: border-box;
+            opacity: 0; transform: translateY(50px);
+            transition: all 0.8s ease-out;
+        }
+
+        .reveal-page { opacity: 1; transform: translateY(0); }
+        .white-page-scroller img { width: 100%; border-radius: 20px; margin-bottom: 20px; border: 2px solid #eee; }
+        .white-page-scroller h2 { margin: 0 0 15px 0; color: #1a1a1a; font-size: 24px; border-bottom: 2px solid #f0f0f0; padding-bottom: 10px; }
+        .white-page-scroller p { font-size: 16px; color: #444; line-height: 1.7; }
+        .white-page-scroller a { color: #0066cc; text-decoration: none; font-weight: bold; }
+        .white-page-scroller a:hover { text-decoration: underline; }
+
+        .profile-img { width: 130px; height: 130px; border-radius: 50%; border: 3px solid var(--main-color); margin-bottom: 15px; margin-top: 15px; object-fit: cover; pointer-events: none; }
+        .btn { display: block; margin: 10px auto; padding: 12px; color: #000; background: var(--main-color); text-decoration: none; font-weight: bold; border-radius: 10px; width: 85%; border: none; cursor: pointer; }
+        .insta-btn { background: linear-gradient(45deg, #f09433, #dc2743, #bc1888); color: white !important; }
+
+        input[type="text"] { padding: 12px; width: 80%; border-radius: 8px; border: 1px solid var(--main-color); background: #111; color: #fff; margin-bottom: 15px; outline: none; text-align: center; }
+
+        .firebase-status {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            border: 1px solid var(--main-color);
+            z-index: 9999;
+        }
+        
+        .admin-login-btn {
+            background: gold;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            font-weight: bold;
+            color: #000;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body oncontextmenu="return false;">
+
+    <div id="welcome-screen" onclick="startSystem()">
+        <div class="welcome-card">
+            <h2>🙏𝘄𝗲𝗹𝗹𝗰𝗼𝗺𝗲 𝗕𝗿𝗼👍</h2>
+            <p>Tap to Verify☠️</p>
+            <div id="timer" style="display:none; color: var(--main-color); font-weight: bold; font-size: 25px; margin-top: 10px;">03</div>
+        </div>
+    </div>
+
+    <canvas id="matrix"></canvas>
+    <div id="firebaseStatus" class="firebase-status">🔥 Loading...</div>
+
+    <!-- MAIN WEBSITE CONTENT -->
+    <div class="dashboard-content" id="full-dashboard">
+        <div class="theme-bar" id="mainThemeBar">
+            <span>SPD:</span><input type="range" min="1" max="10" value="5" oninput="adjustRGB(this.value)">
+            <input type="color" value="#00ff00" oninput="setManualColor(this.value)">
+            <button onclick="resetRGB()" style="background:var(--main-color); border:none; padding:5px 10px; border-radius:5px; font-weight:bold; cursor:pointer;">AUTO RGB</button>           
+        </div>
+
+        <!-- BANNER SLIDER -->
+        <div class="banner-container" onclick="playPop(this)">
+            <div class="arrow arrow-left" onclick="slideNav(-1); event.stopPropagation();">&#10094;</div>
+            <div class="slider-wrapper" id="bannerWrapper"></div>
+            <div class="arrow arrow-right" onclick="slideNav(1); event.stopPropagation();">&#10095;</div>
+        </div>
+
+        <!-- HOME PROFILE SECTION -->
+        <div class="container" onclick="playPop(this); toggleProfile();">
+            <h1 id="homeTitle">☠️𝘷𝘪𝘬𝘢𝘴𝘩 𝘴𝘢𝘩𝘶👑</h1>
+            <img src="https://i.ibb.co/ns7tKC08/Picsart-26-01-06-18-46-49-584.jpg" class="profile-img" id="profilePic">
+            <div id="homeText">
+                <p>🇮🇳ᴊᴀʏ ʜɪɴᴅ ❤️‍🔥 ᴊᴀʏ ꜱʜʀᴇᴇ ʀᴀᴍ 🚩<br><br>
+                   😎𝐳𝐢𝐧𝐝𝐚𝐠𝐢 𝐤𝐞 𝐫𝐮𝐥𝐞𝐬 𝐦𝐞𝐫𝐞 𝐚𝐩𝐧𝐞 𝐡𝐚𝐢𝐧, 𝐬𝐲𝐬𝐭𝐞𝐦 𝐛𝐡𝐢 𝐦𝐞𝐫𝐚 𝐚𝐮𝐫 𝐜𝐨𝐝𝐞 𝐛𝐡𝐢 𝐦𝐞𝐚 𝐡𝐚𝐢💯</p>
+            </div>
+            <div id="homeLinks">
+                <a href="https://t.me/Vikashsahu07" class="btn" id="telegramBtn">TELEGRAM</a>
+                <a href="https://www.instagram.com/cg_vikash_sahu__07" class="btn insta-btn" id="instagramBtn">INSTAGRAM</a>
+            </div>
+        </div>
+
+        <!-- WHITE PAGE - DYNAMIC CONTENT -->
+        <div class="white-page-scroller" id="scrollPage">
+            <h2 id="whiteTitle">EXCLUSIVE UPDATE ✨</h2>
+            <div id="whiteContent"></div>
+        </div>
+        <div style="height: 100px;"></div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+
+    <script>
+        // Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBfRMj0wLS3FW-vMEa8VoRoWgw8CY2TE-Q",
+            authDomain: "vikash-store-16235.firebaseapp.com",
+            databaseURL: "https://vikash-store-16235-default-rtdb.firebaseio.com",
+            projectId: "vikash-store-16235",
+            storageBucket: "vikash-store-16235.firebasestorage.app",
+            messagingSenderId: "645267050789",
+            appId: "1:645267050789:web:bd04fa0da7308088878acc",
+            measurementId: "G-16T5G4Z0T1"
+        };
+
+        // Initialize Firebase
+        let database;
+        let analytics;
+        let firebaseInitialized = false;
+
+        try {
+            firebase.initializeApp(firebaseConfig);
+            database = firebase.database();
+            analytics = firebase.analytics();
+            firebaseInitialized = true;
+            document.getElementById('firebaseStatus').innerHTML = '🔥 Firebase: Connected ✓';
+            document.getElementById('firebaseStatus').style.color = '#00ff00';
+            
+            // Load all settings from Firebase
+            loadWebsiteSettings();
+        } catch (error) {
+            console.error('Firebase error:', error);
+            document.getElementById('firebaseStatus').innerHTML = '🔥 Firebase: Error ✗';
+            document.getElementById('firebaseStatus').style.color = '#ff0000';
+            loadDefaultContent();
+        }
+
+        // Load all website settings from Firebase
+        function loadWebsiteSettings() {
+            database.ref('websiteSettings').once('value')
+                .then((snapshot) => {
+                    const settings = snapshot.val();
+                    if (settings) {
+                        // Apply colors
+                        if (settings.colors) {
+                            document.documentElement.style.setProperty('--main-color', settings.colors.mainColor || '#00ff00');
+                            document.documentElement.style.setProperty('--bg-color', settings.colors.bgColor || '#0a0a0a');
+                            document.documentElement.style.setProperty('--glow-strength', settings.colors.glowStrength || '40px');
+                            document.documentElement.style.setProperty('--ani-speed', settings.colors.aniSpeed || '7s');
+                        }
+                        
+                        // Apply banners
+                        if (settings.banners && settings.banners.length > 0) {
+                            loadBanners(settings.banners);
+                        } else {
+                            loadDefaultBanners();
+                        }
+                        
+                        // Apply home page
+                        if (settings.home) {
+                            document.getElementById('homeTitle').innerText = settings.home.title || '☠️𝘷𝘪𝘬𝘢𝘴𝘩 𝘴𝘢𝘩𝘶👑';
+                            document.getElementById('profilePic').src = settings.home.profilePic || 'https://i.ibb.co/ns7tKC08/Picsart-26-01-06-18-46-49-584.jpg';
+                            document.getElementById('homeText').innerHTML = settings.home.text || '🇮🇳ᴊᴀʏ ʜɪɴᴅ ❤️‍🔥 ᴊᴀʏ ꜱʜʀᴇᴇ ʀᴀᴍ 🚩<br><br>😎𝐳𝐢𝐧𝐝𝐚𝐠𝐢 𝐤𝐞 𝐫𝐮𝐥𝐞𝐬 𝐦𝐞𝐫𝐞 𝐚𝐩𝐧𝐞 𝐡𝐚𝐢𝐧';
+                            document.getElementById('telegramBtn').innerText = settings.home.telegram?.text || 'TELEGRAM';
+                            document.getElementById('telegramBtn').href = settings.home.telegram?.url || 'https://t.me/Vikashsahu07';
+                            document.getElementById('instagramBtn').innerText = settings.home.instagram?.text || 'INSTAGRAM';
+                            document.getElementById('instagramBtn').href = settings.home.instagram?.url || 'https://www.instagram.com/cg_vikash_sahu__07';
+                        }
+                        
+                        // Apply white page content
+                        if (settings.whiteContent && settings.whiteContent.length > 0) {
+                            loadWhiteContent(settings.whiteContent);
+                        } else {
+                            loadDefaultWhiteContent();
+                        }
+                    } else {
+                        loadDefaultContent();
+                    }
+                })
+                .catch(error => {
+                    console.log('Error loading settings:', error);
+                    loadDefaultContent();
+                });
+        }
+
+        // Load banners
+        function loadBanners(banners) {
+            const wrapper = document.getElementById('bannerWrapper');
+            wrapper.innerHTML = '';
+            banners.forEach((banner, index) => {
+                const img = document.createElement('img');
+                img.id = `banner${index + 1}`;
+                img.src = banner;
+                img.alt = `Banner ${index + 1}`;
+                wrapper.appendChild(img);
+            });
+        }
+
+        // Load white page content
+        function loadWhiteContent(content) {
+            const whiteDiv = document.getElementById('whiteContent');
+            whiteDiv.innerHTML = '';
+            
+            content.forEach(item => {
+                if (item.type === 'title') {
+                    document.getElementById('whiteTitle').innerText = item.text;
+                } else if (item.type === 'image') {
+                    const img = document.createElement('img');
+                    img.src = item.url;
+                    img.alt = item.alt || 'Image';
+                    whiteDiv.appendChild(img);
+                } else if (item.type === 'text') {
+                    const p = document.createElement('p');
+                    p.innerHTML = item.text;
+                    whiteDiv.appendChild(p);
+                } else if (item.type === 'bold') {
+                    const b = document.createElement('b');
+                    b.innerHTML = item.text;
+                    whiteDiv.appendChild(b);
+                    whiteDiv.appendChild(document.createElement('br'));
+                } else if (item.type === 'link') {
+                    const a = document.createElement('a');
+                    a.href = item.url;
+                    a.innerHTML = item.text;
+                    a.target = '_blank';
+                    whiteDiv.appendChild(a);
+                    whiteDiv.appendChild(document.createElement('br'));
+                } else if (item.type === 'break') {
+                    whiteDiv.appendChild(document.createElement('br'));
+                }
+            });
+        }
+
+        // Default content if Firebase fails
+        function loadDefaultContent() {
+            loadDefaultBanners();
+            loadDefaultWhiteContent();
+        }
+
+        function loadDefaultBanners() {
+            const defaultBanners = [
+                'https://i.ibb.co/QFdwXBJn/Picsart-26-02-16-10-56-11-905.png',
+                'https://i.ibb.co/0jqW9Q2v/Picsart-26-02-18-10-06-05-546.png',
+                'https://i.ibb.co/dw0TVc32/IMG-20260117-192912-680.webp',
+                'https://i.ibb.co/YBV4kFP5/Picsart-26-02-18-10-08-00-639.png',
+                'https://i.ibb.co/GvTMDr00/DK-CREATION-CC054-F2.png'
+            ];
+            loadBanners(defaultBanners);
+        }
+
+        function loadDefaultWhiteContent() {
+            const defaultContent = [
+                { type: 'image', url: 'https://i.ibb.co/0jqW9Q2v/Picsart-26-02-18-10-06-05-546.png', alt: 'Main Post' },
+                { type: 'bold', text: ' 🎉 𝗔𝗹𝗹 𝗽𝗼𝘀𝘁 𝗽𝗵𝗼𝘁𝗼 👇' },
+                { type: 'image', url: 'https://i.ibb.co/SX8bx8f6/d7e9d5fbbc043ffba6bfa2e38954c0a8.jpg', alt: 'Post' },
+                { type: 'bold', text: '🔱 ॐ Namah Shivay > 🚩 Jay Shree Ram > 🌍' },
+                { type: 'text', text: '🕉️ ॐ नमः शिवाय > 🚩 JAY SHREE RAM > ⚔️ शस्त्र और शास्त्र का मेल हूँ' },
+                { type: 'image', url: 'https://i.ibb.co/pvyhgj8q/IMG-20260104-152619-331.webp', alt: 'Post' },
+                
+                
+            ];
+            loadWhiteContent(defaultContent);
+        }
+
+        // Slider Logic
+        let slideIndex = 0;
+        function slideNav(n) {
+            const wrapper = document.getElementById('bannerWrapper');
+            const totalSlides = document.querySelectorAll('.slider-wrapper img').length;
+            if (totalSlides === 0) return;
+            slideIndex += n;
+            if (slideIndex >= totalSlides) slideIndex = 0;
+            if (slideIndex < 0) slideIndex = totalSlides - 1;
+            wrapper.style.transform = `translateX(-${slideIndex * 100}%)`;
+        }
+        
+        setInterval(() => slideNav(1), 9000);
+
+        // Scroll effect
+        window.addEventListener('scroll', () => {
+            const page = document.getElementById('scrollPage');
+            const themeBar = document.getElementById('mainThemeBar');
+            const triggerBottom = window.innerHeight / 5 * 4;
+            const pageTop = page.getBoundingClientRect().top;
+            if(pageTop < triggerBottom) {
+                page.classList.add('reveal-page');
+                themeBar.classList.add('hide-bar');
+            } else {
+                page.classList.remove('reveal-page');
+                themeBar.classList.remove('hide-bar');
+            }
+        });
+
+        function startSystem() {
+            const t = document.getElementById('timer');
+            t.style.display = 'block';
+            let count = 3;
+            const interval = setInterval(() => {
+                count--;
+                t.innerText = "0" + count;
+                if(count === 0) {
+                    clearInterval(interval);
+                    document.getElementById('welcome-screen').style.display = 'none';
+                    document.getElementById('full-dashboard').classList.add('show-now');
+                }
+            }, 1000);
+        }
+
+        const links = {
+            origP: "https://i.ibb.co/ns7tKC08/Picsart-26-01-06-18-46-49-584.jpg",
+            pNext: "https://i.ibb.co/kgFKtK2q/IMG-20260101-164534-491.webp"
+        };
+
+        function toggleProfile() {
+            const p = document.getElementById('profilePic');
+            p.src = (p.src === links.pNext) ? links.origP : links.pNext;
+        }
+
+        function playPop(el) { 
+            el.classList.remove('pop-active'); 
+            void el.offsetWidth; 
+            el.classList.add('pop-active'); 
+            if (navigator.vibrate) navigator.vibrate(50);
+        }
+        
+        function adjustRGB(s) { 
+            document.documentElement.style.setProperty('--ani-speed', (11 - s) + 's');
+        }
+        
+        function setManualColor(c) { 
+            document.documentElement.style.setProperty('--main-color', c);
+        }
+        
+        function resetRGB() { 
+            document.documentElement.style.setProperty('--main-color', '#00ff00');
+        }
+
+        // Matrix Canvas
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth; 
+        canvas.height = window.innerHeight;
+        const drops = Array(Math.floor(canvas.width/16)).fill(1);
+        
+        function draw() {
+            ctx.fillStyle = "rgba(0, 0, 0, 0.1)"; 
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--main-color');
+            drops.forEach((y, i) => {
+                ctx.fillText(String.fromCharCode(Math.random() * 128), i * 16, y * 16);
+                if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
+            });
+        }
+        setInterval(draw, 50);
+
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
